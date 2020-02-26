@@ -1,4 +1,5 @@
 // See https://de.wikipedia.org/wiki/Lempel-Ziv-Welch-Algorithmus#Beispiel_zur_Dekompression for reference
+#pragma once
 
 #include <assert.h>
 #include <inttypes.h>
@@ -10,18 +11,6 @@ typedef struct {
     uint16_t code;
     char     *str;
 } lzw_dict_entry;
-
-static inline void get_bit_string(uint8_t byte, char *dest)
-{
-    dest[0] = '0' + ((byte & 0b10000000) >> 7);
-    dest[1] = '0' + ((byte & 0b01000000) >> 6);
-    dest[2] = '0' + ((byte & 0b00100000) >> 5);
-    dest[3] = '0' + ((byte & 0b00010000) >> 4);
-    dest[4] = '0' + ((byte & 0b00001000) >> 3);
-    dest[5] = '0' + ((byte & 0b00000100) >> 2);
-    dest[6] = '0' + ((byte & 0b00000010) >> 1);
-    dest[7] = '0' + ((byte & 0b00000001) >> 0);
-}
 
 void lzw_encode(const char *src, uint16_t **dest, uint64_t *dest_len)
 {
@@ -208,51 +197,3 @@ void lzw_decode(const uint16_t *src, uint64_t src_size, char **dest, uint64_t *d
         free(dict[i].str);
     }
 }
-
-int main(int argc, char *argv[])
-{
-    (void) argc;
-    (void) argv;
-
-    const char example[] = "LZWLZ78LZ77LZCLZMWLZAP#";
-    printf("String: %s\n", example);
-
-    // Encode
-    uint16_t *example_encoded = malloc(4096 * sizeof(uint16_t));
-    uint64_t example_encoded_len = 0;
-    lzw_encode(example, &example_encoded, &example_encoded_len);
-
-    printf("LZW-encoded: ");
-    for (uint64_t i = 0; i < example_encoded_len; i++) {
-        uint16_t cur = example_encoded[i];
-        
-        if (cur > 0xFF) {
-            printf("<%"PRIu16"> ", cur);
-        }
-        else {
-            printf("%c ", (char) cur);
-        }
-    }
-    printf("\n");
-
-    double compression_ratio = (double) example_encoded_len / (double) strlen(example) * 100.0;
-    printf("Compression ratio: %"PRIu64" -> %"PRIu64" (%f%%)\n", strlen(example), example_encoded_len, compression_ratio);
-
-    char *example_decoded = malloc(4096);
-    memset(example_decoded, 0, 4096);
-    uint64_t example_decoded_len = 0;
-    lzw_decode(example_encoded, example_encoded_len, &example_decoded, &example_decoded_len);
-
-    printf("LZW-decoded: %s\n", example_decoded);
-
-    free(example_decoded);
-    free(example_encoded);
-
-    return EXIT_SUCCESS;
-}
-
-//uint8_t num = 0xFF;
-//char num_str[9];
-//num_str[8] = '\0';
-//get_bit_string(num, num_str);
-//printf("%s\n", num_str);
